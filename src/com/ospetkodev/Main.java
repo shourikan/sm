@@ -8,6 +8,7 @@
 package com.ospetkodev;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Main {
@@ -23,18 +24,21 @@ public class Main {
     // Classes
 
     private static abstract class DataController {
-        abstract String getDataLine();
+        abstract String getDataLineString();
 
-        int[] userInputToCommands(String userInput, int arrayLength){
+        int[] userInputToCommandsArray(String userInputString, int commandsLengthLimit){
+
+            if(Objects.isNull(userInputString))
+                return new int[0];
 
             //Filter only numbers and commas
-            userInput = userInput.replaceAll("([^0-9,])+", "");
+            userInputString = userInputString.replaceAll("([^0-9,])+", "");
 
             //Command to array
-            String[] userInputArrayString = userInput.split(",");
+            String[] userInputArrayString = userInputString.split(",");
 
             //Invalid starting command: invalid number of commands
-            if(arrayLength != 0 && userInputArrayString.length != arrayLength)
+            if(commandsLengthLimit != 0 && !isCommandLengthEqual(userInputArrayString, commandsLengthLimit))
                 return new int[0];
 
             //Cast commands: String >> Integer, Check empty strings
@@ -48,8 +52,8 @@ public class Main {
             }
 
             if (debugMode) {
-                System.out.println("Raw input: " + userInput);
-                System.out.println("Processed input: " + userInput);
+                System.out.println("Raw input: " + userInputString);
+                System.out.println("Processed input: " + userInputString);
                 System.out.println("Processed input (A): " + Arrays.toString(userInputArrayString));
                 System.out.println("Commands (I): " + Arrays.toString(userInputArrayInt));
             }
@@ -57,7 +61,14 @@ public class Main {
             return userInputArrayInt;
         }
 
-        String processCommands(int[] userCommands) {
+        boolean isCommandLengthEqual(String[] commandsArray, int commandsLengthLimit){
+            if (Objects.isNull(commandsArray))
+                return false;
+
+            return commandsArray.length == commandsLengthLimit;
+        }
+
+        String evaluateCommands(int[] userCommands) {
             for (int command:userCommands) {
                 switch (command) {
                     case 0 -> {
@@ -111,7 +122,7 @@ public class Main {
 
     private static abstract class MapController {
         abstract void rotate(char rotDirection);
-        abstract boolean initialize(int[] userInputArrayInt);
+        abstract boolean initMap(int[] userInputArrayInt);
     }
 
     private static class ScannerDataController extends DataController{
@@ -122,7 +133,7 @@ public class Main {
         }
 
         @Override
-        public String getDataLine(){
+        public String getDataLineString(){
             return scanner.nextLine();
         }
 
@@ -151,7 +162,7 @@ public class Main {
         }
 
         @Override
-        public boolean initialize(int[] userInputArrayInt) {
+        public boolean initMap(int[] userInputArrayInt) {
 
             //Invalid starting position
             if (userInputArrayInt[2] < 0 || userInputArrayInt[2] > userInputArrayInt[0] - 1 || userInputArrayInt[3] < 0 || userInputArrayInt[3] > userInputArrayInt[1] - 1){
@@ -189,10 +200,10 @@ public class Main {
         //Step 1: Create map
         while(true) {
             //Get user input from scanner
-            String userInput = dataController.getDataLine();
+            String userInputString = dataController.getDataLineString();
 
             //Process user input to array(int)
-            int[] userInputArrayInt = dataController.userInputToCommands(userInput, 4);
+            int[] userInputArrayInt = dataController.userInputToCommandsArray(userInputString, 4);
 
             //Empty command
             if(userInputArrayInt.length==0) {
@@ -201,7 +212,7 @@ public class Main {
                 continue;
             }
 
-            if(!mapController.initialize(userInputArrayInt))
+            if(!mapController.initMap(userInputArrayInt))
                 continue;
 
             break;
@@ -218,10 +229,10 @@ public class Main {
         //Step 2: Process move commands
         while(true){
             //Get user input from scanner
-            String userInput = dataController.getDataLine();
+            String userInputString = dataController.getDataLineString();
 
             //Process user input to array(int)
-            int[] userInputArrayInt = dataController.userInputToCommands(userInput, 0);
+            int[] userInputArrayInt = dataController.userInputToCommandsArray(userInputString, 0);
 
             //Empty command
             if(userInputArrayInt.length==0) {
@@ -232,11 +243,11 @@ public class Main {
 
             //Process commands and output the resulting position
             if(debugMode) {
-                System.out.println("Final position:" + dataController.processCommands(userInputArrayInt));
+                System.out.println("Final position:" + dataController.evaluateCommands(userInputArrayInt));
                 mapToString();
             }
             else
-                System.out.println(dataController.processCommands(userInputArrayInt));
+                System.out.println(dataController.evaluateCommands(userInputArrayInt));
 
             break;
         }
@@ -251,11 +262,15 @@ public class Main {
     }
 
     private static void mapToString(){
+        // Rows
         for (int mapRow = 0; mapRow < mapHeightTotal; mapRow++){
             System.out.println();
+            // Columns
             for (int mapColumn = 0; mapColumn < mapArray.length; mapColumn++)
+                // Curr position
                 if (currPosition[0] == mapColumn && currPosition[1] == mapRow)
                     System.out.print("X ");
+                // Map element
                 else
                     System.out.print(mapArray[mapColumn][mapRow] + " ");
 
